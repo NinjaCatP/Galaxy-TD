@@ -1,0 +1,25 @@
+config_version=5
+
+[application]
+config/name="Galaxy TD"
+run/main_scene="res://scenes/main_menu.tscn"
+config/icon="res://icon.png"
+config/features=PackedStringArray("4.3", "Mobile")
+
+[autoload]
+Game="*res://scripts/game.gd"
+Audio="*res://scripts/audio.gd"
+
+[display]
+window/size/viewport_width=1560
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
+
+[input_devices]
+pointing/emulate_mouse_from_touch=true
+
+[rendering]
+renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true

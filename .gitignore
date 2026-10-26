@@ -1,0 +1,18 @@
+# Godot cache (regenerated on open)
+.godot/
+# Build outputs
+*.apk
+*.aab
+*.zip
+build/
+# Toolchains & binaries
+sdk/
+jdk*/
+Godot_v*
+*.x86_64
+# Signing & secrets
+*.keystore
+*.jks
+*.p12
+.env
+export_credentials.cfg
