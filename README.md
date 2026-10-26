@@ -8,6 +8,10 @@ Drag fleets between planets to conquer the galaxy. Every invasion of an occupied
 
 ## Screenshots
 
+**Clear planet ownership** – colour + shape cues (★ you, ◆ enemy, dashed grey = neutral)
+
+![Ownership](docs/screenshots/ownership.png)
+
 | Galaxy map | Planet menu |
 |---|---|
 | ![Galaxy map](docs/screenshots/galaxy_planets.png) | ![Planet menu](docs/screenshots/planet_menu.png) |
@@ -20,7 +24,7 @@ Drag fleets between planets to conquer the galaxy. Every invasion of an occupied
 
 ## Features
 
-- **Galaxy conquest** – drag from your planets to send 25/50/75/100% of their ships; procedurally shaded, rotating planets (rocky, terran, gas giant, ice, lava) with generated names.
+- **Galaxy conquest** – drag from your planets to send 25/50/75/100% of their ships; procedurally shaded, rotating planets (rocky, terran, gas giant, ice, lava) with generated names. Ownership is obvious at a glance: glowing owner rings and halos, owner-colored ship-count pills, colour-blind-friendly emblems (★ you / ◆ enemy), and a HUD legend.
 - **Tower-defense battles** – every contested invasion is played out on a path: attackers launch troop waves (Trooper, Scout, Tank, Bomber, Shield, Medic), defenders build and upgrade towers. Bigger garrisons hit harder; bigger fleets are tougher.
 - **Ships are the currency** – spend a planet's ships on factories (production) and defense (tower budget).
 - **Difficulties** – Easy / Normal / Hard / Brutal.

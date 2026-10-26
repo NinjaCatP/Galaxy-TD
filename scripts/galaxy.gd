@@ -37,6 +37,7 @@ func _ready() -> void:
 	Audio.make_controls(pause_panel, Vector2(1020, 300))
 	_refresh_buttons()
 	_build_planets()
+	var legend := Node2D.new(); ui.add_child(legend); legend.draw.connect(_draw_legend.bind(legend))
 
 func _toggle_pause() -> void:
 	pause_panel.visible = not pause_panel.visible
@@ -348,6 +349,8 @@ const ICON_TOWER := preload("res://art/icons/tower.png")
 const PlanetView := preload("res://scripts/planet_view.gd")
 var overlay: Node2D
 var hover := -1
+var views := {}   # planet index -> PlanetView
+const GLOW := preload("res://art/ships/glow.png")
 
 func _build_planets() -> void:
 	banner = Game.make_label("", Vector2(0, 40), 44); banner.size = Vector2(1560, 200)
@@ -355,9 +358,11 @@ func _build_planets() -> void:
 	banner.add_theme_constant_override("outline_size", 10); banner.add_theme_color_override("font_outline_color", Color.BLACK)
 	banner.visible = false
 	var top := CanvasLayer.new(); top.layer = 10; add_child(top); top.add_child(banner)
-	for p in Game.planets:
+	for i in Game.planets.size():
+		var p = Game.planets[i]
 		if Game.is_mother(p): continue
 		var v := PlanetView.new(); v.position = p.pos; add_child(v); v.setup(p, Game.radius(p))
+		v.set_owner_tint(p.owner); views[i] = v
 	overlay = Node2D.new(); overlay.z_index = 5; add_child(overlay)
 	overlay.draw.connect(_draw_overlay)
 
@@ -371,9 +376,17 @@ func _draw() -> void:
 		var r := Game.radius(p)
 		var col: Color = Game.COLORS[p.owner]
 		var pulse := 0.5 + 0.5 * sin(t * 2.0 + i)
-		var a := 0.35 if p.owner == Game.NEUTRAL else 0.6 + 0.3 * pulse
-		for k in 4: draw_arc(p.pos, r + 5 + k * 3, 0, TAU, 48, Color(col, a * (0.5 - k * 0.11)), 4, true)
-		draw_arc(p.pos, r + 4, 0, TAU, 48, Color(col, a), 3, true)
+		if views.has(i): views[i].set_owner_tint(p.owner)
+		if p.owner == Game.NEUTRAL:
+			for k in 24:
+				var a0 := TAU * k / 24.0 + t * 0.1
+				draw_arc(p.pos, r + 5, a0, a0 + TAU / 48.0, 4, Color(col, 0.75), 2.5, true)
+		else:
+			var hr := r * 2.1 + 6
+			draw_texture_rect(GLOW, Rect2(p.pos - Vector2(hr, hr), Vector2(hr, hr) * 2), false, Color(col, 0.55 + 0.15 * pulse))
+			draw_arc(p.pos, r + 7, 0, TAU, 56, Color(col, 0.35), 14, true)
+			draw_arc(p.pos, r + 7, 0, TAU, 56, Color(col.lightened(0.15), 0.95), 6, true)
+			draw_arc(p.pos, r + 12 + 2 * pulse, 0, TAU, 56, Color(col, 0.3 * pulse), 2, true)
 		if i == drag_from or i == hover:
 			draw_arc(p.pos, r + 14 + 3 * pulse, 0, TAU, 48, Color(1, 1, 1, 0.8), 3, true)
 
@@ -393,11 +406,13 @@ func _draw_overlay() -> void:
 			if p.ships >= 1:
 				if drag_from >= 0 and Game.planets[drag_from] == p: o.draw_arc(p.pos, 105, 0, TAU, 48, Color(1, 1, 1, 0.6), 3, true)
 				draw_mother(o, p.pos, 1.25, t)
-				_label(o, p.pos + Vector2(0, 92), "MOTHERSHIP  %d" % int(p.ships), 26, Color(0.7, 0.9, 1), 300)
+				_pill(o, p.pos + Vector2(0, 92), "MOTHERSHIP  %d" % int(p.ships), 24, Game.PLAYER)
+				emblem(o, p.pos + Vector2(-112, 83), 12.0, Game.PLAYER)
 			continue
 		var r := Game.radius(p)
 		var col: Color = Game.COLORS[p.owner]
-		_label(o, p.pos + Vector2(0, 11), str(int(p.ships)), 30, Color.WHITE if p.owner == Game.NEUTRAL else col.lightened(0.55))
+		_pill(o, p.pos + Vector2(0, 11), str(int(p.ships)), 28, p.owner)
+		if p.owner != Game.NEUTRAL: emblem(o, p.pos + Vector2(r * 0.72, -r * 0.72), 11.0, p.owner)
 		var bx: Vector2 = p.pos + Vector2(-r * 0.9, r + 6)
 		if p.factories > 0:
 			# orbiting station + badge
@@ -419,7 +434,8 @@ func _draw_overlay() -> void:
 			var row := (k + 1) / 2
 			var off: Vector2 = -fwd * row * 16.0 + side * (row * 13.0 if k % 2 == 1 else -row * 13.0) if k > 0 else Vector2.ZERO
 			Game.ShipArt.draw_ship(o, f.type, f.pos + off, ang, Game.COLORS[f.owner], s, t + k)
-		_label(o, f.pos + Vector2(26, -12), str(f.count), 22, Color.WHITE, 60)
+		o.draw_texture_rect(GLOW, Rect2(f.pos - Vector2(34, 34), Vector2(68, 68)), false, Color(Game.COLORS[f.owner], 0.5))
+		_pill(o, f.pos + Vector2(30, -10), str(f.count), 20, f.owner)
 	if not conquest.is_empty(): _draw_conquest(o, t)
 	if drag_from != -1:
 		var a: Vector2 = Game.planets[drag_from].pos
@@ -457,3 +473,50 @@ func _draw_conquest(o: CanvasItem, t: float) -> void:
 	_label(o, MOTHER_CENTER + Vector2(0, 95), "MOTHERSHIP  %d" % int(c.total * k), 34, Color(0.7, 0.9, 1), 400)
 	if j > 0.8:
 		o.draw_rect(Rect2(-100, -100, 1800, 1000), Color(1, 1, 1, (j - 0.8) * 5.0))
+
+func _pill(ci: CanvasItem, pos: Vector2, text: String, size: int, owner: int) -> void:
+	var font := ThemeDB.fallback_font
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + 18
+	var h := size + 8.0
+	var c: Color = Game.COLORS[owner]
+	var fill := Color(c.darkened(0.25), 0.92) if owner != Game.NEUTRAL else Color(0.35, 0.36, 0.4, 0.88)
+	var rc := Rect2(pos.x - w / 2, pos.y - size * 0.78 - 4, w, h)
+	var sb := StyleBoxFlat.new(); sb.bg_color = fill; sb.set_corner_radius_all(int(h / 2))
+	sb.border_color = Color(1, 1, 1, 0.85) if owner != Game.NEUTRAL else Color(0.8, 0.8, 0.85, 0.6)
+	sb.set_border_width_all(2)
+	ci.draw_style_box(sb, rc)
+	ci.draw_string_outline(font, Vector2(rc.position.x, pos.y), text, HORIZONTAL_ALIGNMENT_CENTER, w, size, 5, Color(0, 0, 0, 0.9))
+	ci.draw_string(font, Vector2(rc.position.x, pos.y), text, HORIZONTAL_ALIGNMENT_CENTER, w, size, Color.WHITE)
+
+## Owner shape cue: player star, enemy diamond / triangle / square.
+static func emblem(ci: CanvasItem, c: Vector2, s: float, owner: int) -> void:
+	var pts := PackedVector2Array()
+	match owner:
+		1:
+			for k in 10:
+				var rr := s if k % 2 == 0 else s * 0.45
+				pts.append(c + Vector2.from_angle(-PI / 2 + k * PI / 5) * rr)
+		2: pts = PackedVector2Array([c + Vector2(0, -s), c + Vector2(s * 0.8, 0), c + Vector2(0, s), c + Vector2(-s * 0.8, 0)])
+		3: pts = PackedVector2Array([c + Vector2(0, -s), c + Vector2(s, s * 0.8), c + Vector2(-s, s * 0.8)])
+		4: pts = PackedVector2Array([c + Vector2(-s, -s) * 0.75, c + Vector2(s, -s) * 0.75, c + Vector2(s, s) * 0.75, c + Vector2(-s, s) * 0.75])
+		_: return
+	ci.draw_circle(c, s + 5, Color(0, 0, 0, 0.75))
+	ci.draw_colored_polygon(pts, Game.COLORS[owner])
+	var loop := pts.duplicate(); loop.append(pts[0])
+	ci.draw_polyline(loop, Color.WHITE, 1.5, true)
+
+func _draw_legend(ci: Node2D) -> void:
+	var x := 20.0; var y := 58.0
+	var font := ThemeDB.fallback_font
+	var bg := StyleBoxFlat.new(); bg.bg_color = Color(0, 0, 0, 0.45); bg.set_corner_radius_all(10)
+	ci.draw_style_box(bg, Rect2(x - 8, y - 16, 330, 32))
+	for o in [Game.PLAYER, Game.AI, Game.NEUTRAL]:
+		var c: Color = Game.COLORS[o]
+		if o == Game.NEUTRAL:
+			ci.draw_arc(Vector2(x + 8, y), 8, 0, TAU, 16, c, 2, true)
+		else:
+			ci.draw_circle(Vector2(x + 8, y), 10, c); emblem(ci, Vector2(x + 8, y), 6.0, o)
+		var name: String = Game.OWNER_NAMES[o]
+		ci.draw_string_outline(font, Vector2(x + 24, y + 7), name, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 4, Color.BLACK)
+		ci.draw_string(font, Vector2(x + 24, y + 7), name, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
+		x += 34 + font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 26

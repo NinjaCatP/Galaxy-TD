@@ -5,7 +5,9 @@ extends Node
 const NEUTRAL := 0
 const PLAYER := 1
 const AI := 2
-const COLORS := [Color(0.55, 0.55, 0.6), Color(0.25, 0.6, 1.0), Color(1.0, 0.35, 0.3)]
+const COLORS := [Color(0.72, 0.74, 0.78), Color(0.1, 0.85, 1.0), Color(1.0, 0.2, 0.18), Color(1.0, 0.72, 0.08), Color(1.0, 0.25, 0.85)]
+## Shape cue per owner (color-blind friendly): 0 none, 1 star, 2 diamond, 3 triangle, 4 square
+const OWNER_NAMES := ["Neutral", "You", "Enemy", "Enemy 2", "Enemy 3"]
 const FONT_SIZE := 30
 
 # Troop types: cost = ships consumed per troop

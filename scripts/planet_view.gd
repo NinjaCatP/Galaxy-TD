@@ -40,3 +40,10 @@ func setup(p: Dictionary, radius: float) -> void:
 	material = m
 	var quad := 2.0 * radius / sphere_r
 	scale = Vector2.ONE * quad / 8.0
+
+var _owner := -99
+func set_owner_tint(o: int) -> void:
+	if o == _owner: return
+	_owner = o
+	var c: Color = Game.COLORS[o]
+	(material as ShaderMaterial).set_shader_parameter("owner_col", Color(c, 0.0 if o == Game.NEUTRAL else 0.28))

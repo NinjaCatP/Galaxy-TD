@@ -9,6 +9,7 @@ uniform float cloud_amt = 0.0;
 uniform vec4 tint : source_color = vec4(1.0);
 uniform vec4 atmo : source_color = vec4(0.5, 0.7, 1.0, 0.6);
 uniform bool rings = false;
+uniform vec4 owner_col : source_color = vec4(1.0, 1.0, 1.0, 0.0);
 uniform vec4 ring_col : source_color = vec4(0.85, 0.75, 0.6, 0.8);
 
 vec4 ring_at(vec2 p) {
@@ -34,10 +35,13 @@ void fragment() {
 			float cl = texture(clouds, vec2(lon * 0.5 + TIME * speed * 0.6, lat)).a * cloud_amt;
 			col = mix(col, vec3(1.0), cl);
 		}
+		float lum = dot(col, vec3(0.3, 0.59, 0.11));
+		col = mix(col, owner_col.rgb * (0.3 + 0.9 * lum), owner_col.a);
 		vec3 n = vec3(p.x, p.y, z);
 		float light = clamp(dot(n, normalize(vec3(-0.55, -0.45, 0.7))), 0.0, 1.0);
 		col *= 0.12 + 1.0 * light;
 		col += atmo.rgb * pow(1.0 - z, 2.5) * atmo.a * (0.4 + light);
+		col += owner_col.rgb * pow(1.0 - z, 3.0) * owner_col.a * 2.2;
 		float edge = smoothstep(1.0, 0.97, r);
 		outc = vec4(col, edge);
 		if (ring.a > 0.0 && p.y > 0.0) outc.rgb = mix(outc.rgb, ring.rgb * (0.4 + 0.6 * light), ring.a);
